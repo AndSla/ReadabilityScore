@@ -23,6 +23,11 @@ public class Main {
 
             System.out.println("Enter the score you want to calculate (ARI, FK, SMOG, CL, all): ");
 
+            System.out.println(getARIScore(numOfWords, numOfSentences, numOfCharacters));
+            System.out.println(getFKScore(numOfWords, numOfSentences, numOfSyllables));
+            System.out.println(getSMOGScore(numOfSentences, numOfPolysyllables));
+            System.out.println(getCLScore(numOfWords, numOfSentences, numOfCharacters));
+
             //double score = 4.71 * (numOfCharacters / numOfWords) + 0.5 * (numOfWords / numOfSentences) - 21.43;
 
         } catch (NoSuchFileException e) {
@@ -130,6 +135,28 @@ public class Main {
                 "Polysyllables: " + df.format(polysyllables);
 
         System.out.println(result);
+    }
+
+    // Automated readability index
+    public static double getARIScore(double words, double sentences, double characters) {
+        return 4.71 * (characters / words) + 0.5 * (words / sentences) - 21.43;
+    }
+
+    // Flesch–Kincaid readability test
+    public static double getFKScore(double words, double sentences, double syllables) {
+        return 0.39 * (words / sentences) + 11.8 * (syllables / words) - 15.59;
+    }
+
+    // Simple Measure of Gobbledygook
+    public static double getSMOGScore(double sentences, double polysyllables) {
+        return 1.043 * Math.sqrt(polysyllables * (30 / sentences)) + 3.1291;
+    }
+
+    // Coleman–Liau index
+    public static double getCLScore(double words, double sentences, double characters) {
+        double l = (100 * characters) / words;
+        double s = (100 * sentences) / words;
+        return 0.0588 * l - 0.296 * s - 15.8;
     }
 
     public static void printResult(double words, double sentences, double characters, double score) {
