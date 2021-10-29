@@ -16,10 +16,14 @@ public class Main {
             double numOfSentences = getNumOf("sentences", text);
             double numOfWords = getNumOf("words", text);
             double numOfCharacters = getNumOf("characters", text);
+            double numOfSyllables = getNumOf("syllables", text);
+            double numOfPolysyllables = getNumOf("polysyllables", text);
 
-            double score = 4.71 * (numOfCharacters / numOfWords) + 0.5 * (numOfWords / numOfSentences) - 21.43;
+            printQuantities(numOfWords, numOfSentences, numOfCharacters, numOfSyllables, numOfPolysyllables);
 
-            printResult(numOfWords, numOfSentences, numOfCharacters, score);
+            System.out.println("Enter the score you want to calculate (ARI, FK, SMOG, CL, all): ");
+
+            //double score = 4.71 * (numOfCharacters / numOfWords) + 0.5 * (numOfWords / numOfSentences) - 21.43;
 
         } catch (NoSuchFileException e) {
             System.out.println("File not found!");
@@ -42,7 +46,7 @@ public class Main {
 
             case "words":
                 String[] words;
-                words = text.split("\\s");
+                words = text.split("[.,?!]*\\s");  // split on .,? or ! with whitespace
                 return words.length;
 
             case "characters":
@@ -50,15 +54,82 @@ public class Main {
                 double numOfCharacters = 0;
                 characters = text.toCharArray();
                 for (char character : characters) {
-                    if (String.valueOf(character).matches("\\S")) {
+                    if (String.valueOf(character).matches("\\S")) { // checks if char is non-whitespace
                         numOfCharacters += 1;
                     }
                 }
                 return numOfCharacters;
 
+            case "syllables":
+                words = text.split("[.,?!]*\\s");
+                int numOfSyllables = 0;
+
+                for (String word : words) {
+                    numOfSyllables += getNumOfSyllables(word);
+                }
+
+                return numOfSyllables;
+
+            case "polysyllables":
+                words = text.split("[.,?!]*\\s");
+                int numOfPolysyllables = 0;
+
+                for (String word : words) {
+                    if (getNumOfSyllables(word) > 2) {
+                        numOfPolysyllables += 1;
+                    }
+                }
+
+                return numOfPolysyllables;
+
             default:
                 return 0;
         }
+    }
+
+    public static double getNumOfSyllables(String word) {
+        String[] chars = word.split("");
+        int numOfVowels = 0;
+        int numOfSyllables = 0;
+
+        for (int i = 0; i < word.length(); i++) {
+            if (chars[i].matches("[aAeEiIoOuUyY]")) {   // counting vowels in words
+                numOfVowels += 1;
+                if (i < word.length() - 1 &&
+                        chars[i + 1].matches("[aAeEiIoOuUyY]")) {   // get rid of vowels that or next to each other and forms one syllable
+                    numOfVowels -= 1;
+                }
+            }
+        }
+
+        numOfSyllables += numOfVowels;
+
+        if (numOfVowels == 0) {
+            numOfSyllables += 1;
+        } else if (numOfVowels > 1 && word.matches("\\w*[eE]")) {   // don't count e in the end of word as the syllable
+            numOfSyllables -= 1;
+        }
+
+        return numOfSyllables;
+
+    }
+
+    public static void printQuantities(
+            double words,
+            double sentences,
+            double characters,
+            double syllables,
+            double polysyllables) {
+
+        DecimalFormat df = new DecimalFormat("#");
+
+        String result = "Words: " + df.format(words) + "\n" +
+                "Sentences: " + df.format(sentences) + "\n" +
+                "Characters: " + df.format(characters) + "\n" +
+                "Syllables: " + df.format(syllables) + "\n" +
+                "Polysyllables: " + df.format(polysyllables);
+
+        System.out.println(result);
     }
 
     public static void printResult(double words, double sentences, double characters, double score) {
