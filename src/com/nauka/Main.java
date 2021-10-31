@@ -5,6 +5,8 @@ import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Paths;
 import java.text.DecimalFormat;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Scanner;
 
 public class Main {
@@ -19,42 +21,11 @@ public class Main {
             double numOfCharacters = getNumOf("characters", text);
             double numOfSyllables = getNumOf("syllables", text);
             double numOfPolysyllables = getNumOf("polysyllables", text);
+            Map<String, Double> scores = getScores(numOfWords, numOfSentences, numOfCharacters, numOfSyllables, numOfPolysyllables);
 
             printQuantities(numOfWords, numOfSentences, numOfCharacters, numOfSyllables, numOfPolysyllables);
-
             String chosenAlgorithm = getUserInput();
-            System.out.println();
-
-            if (chosenAlgorithm != null) {
-                double ariScore = getARIScore(numOfWords, numOfSentences, numOfCharacters);
-                double fkScore = getFKScore(numOfWords, numOfSentences, numOfSyllables);
-                double smogScore = getSMOGScore(numOfSentences, numOfPolysyllables);
-                double clScore = getCLScore(numOfWords, numOfSentences, numOfCharacters);
-                int average = (getResult(ariScore) + getResult(fkScore) + getResult(smogScore) + getResult(clScore)) / 4;
-                DecimalFormat df = new DecimalFormat("#.##");
-
-                switch (chosenAlgorithm) {
-                    case "all":
-                        printResult("ARI", ariScore, getResult(ariScore));
-                        printResult("FK", fkScore, getResult(fkScore));
-                        printResult("SMOG", smogScore, getResult(smogScore));
-                        printResult("CL", clScore, getResult(clScore));
-                        System.out.println();
-                        System.out.println("This text should be understood in average by " + average + "-year-olds.");
-                        break;
-                    case "ARI":
-                        printResult("ARI", ariScore, getResult(ariScore));
-                        break;
-                    case "FK":
-                        printResult("FK", fkScore, getResult(fkScore));
-                        break;
-                    case "SMOG":
-                        printResult("SMOG", smogScore, getResult(smogScore));
-                        break;
-                    case "CL":
-                        printResult("CL", clScore, getResult(clScore));
-                }
-            }
+            printResult(chosenAlgorithm, scores);
 
         } catch (NoSuchFileException e) {
             System.out.println("File not found!");
@@ -163,26 +134,29 @@ public class Main {
         System.out.println(result);
     }
 
-    // Automated readability index
-    public static double getARIScore(double words, double sentences, double characters) {
-        return 4.71 * (characters / words) + 0.5 * (words / sentences) - 21.43;
-    }
+    public static Map<String, Double> getScores(double words,
+                                                double sentences,
+                                                double characters,
+                                                double syllables,
+                                                double polysyllables) {
 
-    // Flesch–Kincaid readability test
-    public static double getFKScore(double words, double sentences, double syllables) {
-        return 0.39 * (words / sentences) + 11.8 * (syllables / words) - 15.59;
-    }
-
-    // Simple Measure of Gobbledygook
-    public static double getSMOGScore(double sentences, double polysyllables) {
-        return 1.043 * Math.sqrt(polysyllables * (30 / sentences)) + 3.1291;
-    }
-
-    // Coleman–Liau index
-    public static double getCLScore(double words, double sentences, double characters) {
+        double ariScore = 4.71 * (characters / words) + 0.5 * (words / sentences) - 21.43;
+        double fkScore = 0.39 * (words / sentences) + 11.8 * (syllables / words) - 15.59;
+        double smogScore = 1.043 * Math.sqrt(polysyllables * (30 / sentences)) + 3.1291;
         double l = (100 * characters) / words;
         double s = (100 * sentences) / words;
-        return 0.0588 * l - 0.296 * s - 15.8;
+        double clScore = 0.0588 * l - 0.296 * s - 15.8;
+        double average = (ariScore + fkScore + smogScore + clScore) / 4;
+
+        Map<String, Double> scores = new HashMap<>();
+        scores.put("ARI", ariScore);
+        scores.put("FK", fkScore);
+        scores.put("SMOG", smogScore);
+        scores.put("CL", clScore);
+        scores.put("all", average);
+
+        return scores;
+
     }
 
     public static String getUserInput() {
@@ -203,11 +177,12 @@ public class Main {
 
         }
 
+        System.out.println();
         return input;
 
     }
 
-    public static int getResult(double score) {
+    public static int getAge(double score) {
         int roundedScore = (int) Math.ceil(score);
         int age;
 
@@ -259,8 +234,11 @@ public class Main {
         return age;
     }
 
-    public static void printResult(String chosenAlgorithm, double score, int age) {
+    public static void printResult(String chosenAlgorithm, Map<String, Double> scores) {
         DecimalFormat df = new DecimalFormat("#.##");
+
+        double score = scores.get(chosenAlgorithm);
+        int age = getAge(score);
 
         switch (chosenAlgorithm) {
             case "ARI":
@@ -275,7 +253,15 @@ public class Main {
             case "CL":
                 System.out.println("Coleman–Liau index: " + df.format(score) + " (about " + age + "-year-olds).");
                 break;
+            case "all":
+                System.out.println("Automated Readability Index: " + df.format(scores.get("ARI")) + " (about " + getAge(scores.get("ARI")) + "-year-olds).");
+                System.out.println("Flesch–Kincaid readability tests: " + df.format(scores.get("FK")) + " (about " + getAge(scores.get("FK")) + "-year-olds).");
+                System.out.println("Simple Measure of Gobbledygook: " + df.format(scores.get("SMOG")) + " (about " + getAge(scores.get("SMOG")) + "-year-olds).");
+                System.out.println("Coleman–Liau index: " + df.format(scores.get("CL")) + " (about " + getAge(scores.get("CL")) + "-year-olds).");
+                System.out.println();
+                System.out.println("This text should be understood in average by " + df.format(scores.get(chosenAlgorithm)) + "-year-olds.");
         }
+
     }
 
 }
